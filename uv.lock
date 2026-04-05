@@ -1,0 +1,144 @@
+version = 1
+requires-python = ">=3.10"
+
+[[package]]
+name = "annotated-types"
+version = "0.4.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "anyio"
+version = "3.7.1"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "certifi"
+version = "2024.2.2"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "click"
+version = "8.1.7"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "fastapi"
+version = "0.103.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0",
+    "starlette<0.28.0,>=0.27.0",
+    "typing-extensions>=3.7.4.3",
+]
+
+[[package]]
+name = "h11"
+version = "0.14.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "httpcore"
+version = "1.0.2"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "certifi",
+    "h11<0.15,>=0.13",
+]
+
+[[package]]
+name = "httpx"
+version = "0.24.1"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "certifi",
+    "httpcore==1.0.2",
+    "idna",
+    "sniffio",
+]
+
+[[package]]
+name = "idna"
+version = "3.6"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "openai"
+version = "1.3.5"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "httpx<1,>=0.23.1",
+    "pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0",
+    "tqdm>4",
+    "typing-extensions<5,>=4.5",
+]
+
+[[package]]
+name = "openenv-core"
+version = "0.2.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "pydantic"
+version = "2.5.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "annotated-types>=0.4.0",
+    "pydantic-core==2.14.1",
+    "typing-extensions!=4.7.0,>=4.6.1",
+]
+
+[[package]]
+name = "pydantic-core"
+version = "2.14.1"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "python-multipart"
+version = "0.0.6"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "sniffio"
+version = "1.3.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "starlette"
+version = "0.27.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "anyio<5,>=3.4.0",
+]
+
+[[package]]
+name = "tqdm"
+version = "4.66.1"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "typing-extensions"
+version = "4.8.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+
+[[package]]
+name = "uvicorn"
+version = "0.22.0"
+source = { type = "registry", url = "https://pypi.org/simple" }
+dependencies = [
+    "click>=7.0",
+    "h11>=0.8",
+]
+
+[[package]]
+name = "pharma-env"
+version = "1.0.0"
+source = { type = "editable", path = "." }
+dependencies = [
+    "fastapi==0.103.0",
+    "uvicorn[standard]==0.22.0",
+    "pydantic>=1.7",
+    "httpx>=0.20.0",
+    "openai>=1.0.0",
+    "python-multipart>=0.0.5",
+    "openenv-core>=0.2.0",
+]
