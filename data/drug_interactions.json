@@ -1,0 +1,33 @@
+{
+  "critical_interactions": {
+    "Warfarin + Ciprofloxacin": {
+      "severity": "high",
+      "effect": "Ciprofloxacin inhibits Warfarin metabolism → increased anticoagulation → bleeding risk",
+      "recommendation": "Avoid combination or monitor INR closely every 2-3 days",
+      "alternative": "Use Nitrofurantoin or Fosfomycin for UTI instead"
+    },
+    "Warfarin + Aspirin": {
+      "severity": "high",
+      "effect": "Dual antiplatelet + anticoagulation → severe bleeding risk",
+      "recommendation": "Only use if absolute indication (e.g., mechanical heart valve + ACS)",
+      "monitoring": "INR + clinical bleeding signs"
+    },
+    "Metformin + Contrast Dye": {
+      "severity": "moderate",
+      "effect": "Risk of contrast-induced nephropathy → lactic acidosis",
+      "recommendation": "Hold Metformin 48h before and after contrast studies"
+    }
+  },
+  "renal_dosing": {
+    "eGFR_30_50": {
+      "Metformin": "Reduce to 50% dose or avoid",
+      "Gabapentin": "Reduce to 300mg once daily",
+      "Digoxin": "Reduce to 0.125mg daily or every other day"
+    },
+    "eGFR_15_30": {
+      "Metformin": "Contraindicated",
+      "NSAIDs": "Avoid - high nephrotoxicity risk",
+      "Enoxaparin": "Reduce dose by 50%"
+    }
+  }
+}
