@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pharma-env"
+version = "1.0.0"
+description = "Drug Formulation Validation Environment for AI Pharmacist Training"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Jayanth Karpageswar", email = "jayanthkarpageswar24td0789@gmail.com"}
+]
+keywords = ["reinforcement-learning", "pharmaceutical", "safety", "openenv"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "fastapi==0.103.0",
+    "uvicorn[standard]==0.22.0",
+    "pydantic>=1.7",
+    "httpx>=0.20.0",
+    "openai>=1.0.0",
+    "python-multipart>=0.0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jayanthkarpageswar24td0789/my-openenv"
+Repository = "https://github.com/jayanthkarpageswar24td0789/my-openenv"
+Issues = "https://github.com/jayanthkarpageswar24td0789/my-openenv/issues"
+
+[tool.setuptools]
+packages = ["server", "tests"]
+
+[tool.setuptools.package-data]
+"" = ["*.json", "*.yaml"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_mode = 3
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["server"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
