@@ -1,0 +1,166 @@
+{
+  "task_1_easy": [
+    {
+      "id": "case_101",
+      "patient": {
+        "age": 65,
+        "conditions": ["Type 2 Diabetes"],
+        "current_medications": [],
+        "lab_values": {}
+      },
+      "formula": {
+        "active_ingredients": ["Metformin 500mg"],
+        "excipients": ["Lactose", "Starch", "Magnesium stearate"],
+        "frequency": "Twice daily",
+        "indication": "Blood sugar control"
+      },
+      "correct_action": "REJECT",
+      "correct_reason": "Lactose in excipients may be problematic for diabetic patients. Request lactose-free formulation.",
+      "grading_rubric": {
+        "1.0": "Identifies lactose issue and suggests alternative",
+        "0.7": "Identifies lactose but approves with warning",
+        "0.3": "Mentions excipients vaguely",
+        "0.0": "Blindly approves"
+      }
+    },
+    {
+      "id": "case_102",
+      "patient": {
+        "age": 45,
+        "conditions": ["Hypertension"],
+        "current_medications": ["Amlodipine 10mg daily"],
+        "lab_values": {}
+      },
+      "formula": {
+        "active_ingredients": ["Lisinopril 10mg"],
+        "excipients": ["Gelatin", "Titanium dioxide"],
+        "frequency": "Once daily",
+        "indication": "Blood pressure control"
+      },
+      "correct_action": "APPROVE",
+      "correct_reason": "Lisinopril + Amlodipine is a safe and effective combination for hypertension. No contraindications.",
+      "grading_rubric": {
+        "1.0": "Approves with correct reasoning about combination therapy",
+        "0.5": "Approves but reasoning unclear",
+        "0.0": "Rejects safe combination"
+      }
+    }
+  ],
+  "task_2_medium": [
+    {
+      "id": "case_201",
+      "patient": {
+        "age": 58,
+        "conditions": ["Chronic Kidney Disease Stage 3"],
+        "current_medications": ["Amlodipine 5mg daily"],
+        "lab_values": {
+          "eGFR": "45 mL/min",
+          "Creatinine": "1.8 mg/dL"
+        }
+      },
+      "formula": {
+        "active_ingredients": ["Ibuprofen 400mg"],
+        "excipients": ["Gelatin"],
+        "frequency": "3 times daily",
+        "indication": "Joint pain"
+      },
+      "correct_action": "MODIFY",
+      "correct_reason": "NSAIDs are nephrotoxic in CKD. Reduce dose to 200mg twice daily OR suggest acetaminophen as safer alternative.",
+      "grading_rubric": {
+        "1.0": "Suggests dose reduction or safer alternative (acetaminophen)",
+        "0.6": "Identifies NSAID risk but wrong alternative",
+        "0.3": "Vague mention of kidney issues",
+        "0.0": "Approves full dose in CKD patient"
+      }
+    },
+    {
+      "id": "case_202",
+      "patient": {
+        "age": 72,
+        "conditions": ["Type 2 Diabetes", "Mild CKD"],
+        "current_medications": ["Metformin 1000mg twice daily"],
+        "lab_values": {
+          "eGFR": "48 mL/min",
+          "HbA1c": "7.8%"
+        }
+      },
+      "formula": {
+        "active_ingredients": ["Metformin 1000mg"],
+        "excipients": ["Lactose"],
+        "frequency": "Twice daily",
+        "indication": "Diabetes control"
+      },
+      "correct_action": "MODIFY",
+      "correct_reason": "eGFR 48 requires Metformin dose reduction to 500mg twice daily. Also consider lactose-free formulation.",
+      "grading_rubric": {
+        "1.0": "Identifies both eGFR-based dose reduction AND lactose issue",
+        "0.7": "Identifies dose reduction need only",
+        "0.4": "Mentions kidney function vaguely",
+        "0.0": "Approves without adjustment"
+      }
+    }
+  ],
+  "task_3_hard": [
+    {
+      "id": "case_301",
+      "patient": {
+        "age": 72,
+        "conditions": ["Hypertension", "Atrial Fibrillation", "GERD"],
+        "current_medications": [
+          "Warfarin 5mg daily",
+          "Amlodipine 10mg daily",
+          "Omeprazole 20mg daily",
+          "Metoprolol 50mg twice daily"
+        ],
+        "lab_values": {
+          "INR": "2.4",
+          "eGFR": "62 mL/min"
+        }
+      },
+      "formula": {
+        "active_ingredients": ["Ciprofloxacin 500mg"],
+        "excipients": ["Lactose", "Starch"],
+        "frequency": "Twice daily for 7 days",
+        "indication": "Urinary tract infection"
+      },
+      "correct_action": "REJECT",
+      "correct_reason": "CRITICAL INTERACTION: Ciprofloxacin + Warfarin → increased bleeding risk. Suggest Nitrofurantoin or Fosfomycin instead. Must monitor INR if Cipro unavoidable.",
+      "grading_rubric": {
+        "1.0": "Identifies Cipro+Warfarin interaction AND suggests safe alternative + monitoring plan",
+        "0.7": "Identifies interaction and suggests monitoring but misses alternative",
+        "0.4": "Vaguely mentions interactions",
+        "0.0": "Approves dangerous combination"
+      }
+    },
+    {
+      "id": "case_302",
+      "patient": {
+        "age": 68,
+        "conditions": ["Heart Failure", "Diabetes", "CKD Stage 3"],
+        "current_medications": [
+          "Furosemide 40mg daily",
+          "Metformin 500mg twice daily",
+          "Carvedilol 12.5mg twice daily"
+        ],
+        "lab_values": {
+          "eGFR": "42 mL/min",
+          "Potassium": "5.1 mEq/L"
+        }
+      },
+      "formula": {
+        "active_ingredients": ["Spironolactone 25mg"],
+        "excipients": ["Lactose"],
+        "frequency": "Once daily",
+        "indication": "Heart failure management"
+      },
+      "correct_action": "REJECT",
+      "correct_reason": "High-risk scenario: Spironolactone in CKD + baseline high potassium (5.1) → life-threatening hyperkalemia risk. Need potassium <4.5 and eGFR >45 to start safely.",
+      "grading_rubric": {
+        "1.0": "Identifies hyperkalemia risk + eGFR concern + suggests monitoring plan",
+        "0.6": "Identifies potassium risk only",
+        "0.3": "Vague concern about labs",
+        "0.0": "Approves in high-risk patient"
+      }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "excipient_contraindications": {
+    "Lactose": {
+      "problematic_conditions": ["Lactose Intolerance", "Type 2 Diabetes (some cases)", "Galactosemia"],
+      "severity": "moderate",
+      "recommendation": "Consider lactose-free alternative or check patient tolerance"
+    },
+    "Gluten": {
+      "problematic_conditions": ["Celiac Disease", "Gluten Sensitivity"],
+      "severity": "high",
+      "recommendation": "Must use gluten-free formulation"
+    },
+    "Gelatin": {
+      "problematic_conditions": ["Vegetarian/Vegan dietary restriction", "Gelatin allergy"],
+      "severity": "low",
+      "recommendation": "Use vegetable-based capsules"
+    }
+  },
+  "drug_contraindications": {
+    "Metformin": {
+      "contraindications": ["Severe kidney disease (eGFR < 30)", "Liver failure", "Acute metabolic acidosis"],
+      "warnings": ["Lactic acidosis risk", "GI upset common", "Vitamin B12 deficiency with long-term use"]
+    },
+    "Ibuprofen": {
+      "contraindications": ["Active GI bleeding", "Severe heart failure", "Third trimester pregnancy"],
+      "warnings": ["Increased cardiovascular risk", "Nephrotoxic in CKD", "GI ulceration risk"]
+    },
+    "Aspirin": {
+      "contraindications": ["Active bleeding disorder", "Children with viral infection (Reye's syndrome risk)"],
+      "warnings": ["GI bleeding risk", "Interaction with anticoagulants"]
+    }
+  }
+}
