@@ -88,11 +88,7 @@ async def get_state():
         raise HTTPException(status_code=500, detail=f"State retrieval failed: {str(e)}")
 
 
-def main():
-    """Main entry point for the server"""
+# For local testing
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-if __name__ == "__main__":
-    main()

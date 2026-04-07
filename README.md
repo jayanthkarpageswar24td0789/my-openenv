@@ -1,11 +1,3 @@
----
-title: PharmaSimEnvironment
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
----
-
 # PharmaSimEnvironment - Drug Formulation Validation
 
 An OpenEnv environment for training AI agents to validate pharmaceutical formulations for patient safety.
