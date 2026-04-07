@@ -36,9 +36,20 @@ class PharmaSimEnvironment:
         
     def _load_task_cases(self) -> Dict[str, list]:
         """Load patient cases from JSON file"""
-        cases_file = Path(__file__).parent / "data" / "task_cases.json"
+        # Try multiple possible paths for data directory
+        possible_paths = [
+            Path(__file__).parent / "data" / "task_cases.json",  # When run from root
+            Path(__file__).parent.parent / "data" / "task_cases.json",  # When run from server/
+            Path.cwd() / "data" / "task_cases.json",  # Current working directory
+        ]
         
-        if cases_file.exists():
+        cases_file = None
+        for path in possible_paths:
+            if path.exists():
+                cases_file = path
+                break
+        
+        if cases_file:
             with open(cases_file, 'r') as f:
                 return json.load(f)
         else:
@@ -191,10 +202,10 @@ class PharmaSimEnvironment:
         Grade pharmacist decision based on rubric
         
         Scoring:
-        - 1.0: Perfect (correct decision + good reasoning)
+        - 0.99: Perfect (correct decision + good reasoning)
         - 0.7: Good (correct decision, weak reasoning OR wrong decision but identifies issue)
         - 0.4: Partial (mentions relevant concern but wrong conclusion)
-        - 0.0: Wrong (dangerous decision or no reasoning)
+        - 0.01: Wrong (dangerous decision or no reasoning)
         """
         correct_decision = self.state.correct_action
         agent_decision = action.decision
@@ -206,7 +217,7 @@ class PharmaSimEnvironment:
             if self.state.task_id == 1:
                 # Task 1: Should mention lactose or excipient
                 if "lactose" in reasoning or "excipient" in reasoning:
-                    return 1.0
+                    return 0.99
                 else:
                     return 0.7  # Right answer but weak reasoning
             
@@ -214,7 +225,7 @@ class PharmaSimEnvironment:
                 # Task 2: Should mention kidney/renal/dose/nsaid
                 keywords = ["kidney", "renal", "ckd", "dose", "nsaid", "nephrotoxic"]
                 if any(kw in reasoning for kw in keywords):
-                    return 1.0
+                    return 0.99
                 else:
                     return 0.7
             
@@ -222,7 +233,7 @@ class PharmaSimEnvironment:
                 # Task 3: Should mention interaction or specific drugs
                 keywords = ["interaction", "warfarin", "ciprofloxacin", "bleeding", "inr"]
                 if any(kw in reasoning for kw in keywords):
-                    return 1.0
+                    return 0.99
                 else:
                     return 0.7
         
@@ -242,7 +253,7 @@ class PharmaSimEnvironment:
                     return 0.4
             
             # No relevant reasoning - complete miss
-            return 0.0
+            return 0.01
     
     def _build_result_message(self, action: PharmacistAction, reward: float) -> str:
         """Build feedback message for agent"""
