@@ -1,0 +1,85 @@
+name: PharmaSimEnvironment
+version: 1.0.0
+description: Drug Formulation Validation Environment for AI Pharmacist Training
+author: Jayanth Karpageswar
+contact: jayanthkarpageswar24td0789@gmail.com
+
+# Environment specification
+environment:
+  type: reinforcement_learning
+  domain: pharmaceutical_safety
+  observation_space:
+    patient:
+      age: int
+      conditions: list[str]
+      current_medications: list[str]
+      lab_values: dict[str, str]
+    proposed_formula:
+      active_ingredients: list[str]
+      excipients: list[str]
+      frequency: str
+      indication: str
+  
+  action_space:
+    decision: enum[APPROVE, REJECT, MODIFY, REQUEST_INFO]
+    reasoning: str
+
+# Tasks definition
+tasks:
+  - id: 1
+    name: "Basic Contraindication Check"
+    difficulty: easy
+    description: "Identify contraindicated ingredients for patient conditions"
+    
+  - id: 2
+    name: "Dosage Optimization"
+    difficulty: medium
+    description: "Adjust medication doses based on organ function and patient characteristics"
+    
+  - id: 3
+    name: "Multi-Drug Interaction Analysis"
+    difficulty: hard
+    description: "Detect critical drug-drug interactions and suggest alternatives"
+
+# Evaluation metrics
+metrics:
+  - name: accuracy
+    type: accuracy
+  - name: average_reward
+    type: average
+  - name: success_rate
+    type: percentage
+    threshold: 0.7
+
+# Server configuration
+server:
+  host: 0.0.0.0
+  port: 7860
+  endpoint: /
+  health_check: GET /
+  reset_endpoint: POST /reset
+  step_endpoint: POST /step
+
+# Requirements
+requirements:
+  - fastapi==0.103.0
+  - uvicorn[standard]==0.22.0
+  - pydantic>=1.7
+  - httpx>=0.20.0
+  - openai>=1.0.0
+  - python-multipart>=0.0.5
+
+# Docker configuration
+docker:
+  base_image: python:3.10-slim
+  expose_port: 7860
+  entrypoint: ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "7860"]
+
+# Data files
+data_files:
+  - path: data/task_cases.json
+    description: Patient cases for training
+  - path: data/contraindications.json
+    description: Drug contraindication database
+  - path: data/drug_interactions.json
+    description: Drug interaction database
