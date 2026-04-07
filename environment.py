@@ -36,9 +36,20 @@ class PharmaSimEnvironment:
         
     def _load_task_cases(self) -> Dict[str, list]:
         """Load patient cases from JSON file"""
-        cases_file = Path(__file__).parent / "data" / "task_cases.json"
+        # Try multiple possible paths for data directory
+        possible_paths = [
+            Path(__file__).parent / "data" / "task_cases.json",  # When run from root
+            Path(__file__).parent.parent / "data" / "task_cases.json",  # When run from server/
+            Path.cwd() / "data" / "task_cases.json",  # Current working directory
+        ]
         
-        if cases_file.exists():
+        cases_file = None
+        for path in possible_paths:
+            if path.exists():
+                cases_file = path
+                break
+        
+        if cases_file:
             with open(cases_file, 'r') as f:
                 return json.load(f)
         else:
