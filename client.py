@@ -3,11 +3,10 @@ HTTP client for PharmaSimEnvironment
 Connects to server via REST API
 """
 
-import os
+import httpx
+import time
 import sys
 from typing import Tuple
-
-import httpx
 from models import PharmacistAction, PharmacistObservation
 
 
@@ -22,58 +21,44 @@ class PharmaSimClient:
         client.close()
     """
     
-    def __init__(self, base_url: str = "http://localhost:8000", verbose: bool = True):
+    def __init__(self, base_url: str = "http://localhost:8000"):
         """
         Initialize client
         
         Args:
             base_url: Server URL (local or HF Spaces)
-            verbose: Whether to print connection status messages
         """
         self.base_url = base_url.rstrip("/")
-        self.verbose = verbose
         self.client = httpx.Client(timeout=30.0)
-        self.connected = self._check_connection()
-    
-    def _check_connection(self) -> bool:
-        """Verify server is reachable"""
-        try:
-            response = self.client.get(f"{self.base_url}/")
-            response.raise_for_status()
-            if self.verbose:
-                print(f"✓ Connected to PharmaSimEnvironment: {response.json()['status']}")
-            return True
-        except Exception as e:
-            raise ConnectionError(
-                f"Could not reach PharmaSimEnvironment at {self.base_url}: {e}"
-            ) from e
-
-    def _serialize_action(self, action: PharmacistAction) -> dict:
-        """Serialize an action for Pydantic v1/v2 compatibility."""
-        if hasattr(action, "model_dump"):
-            return action.model_dump()
-        return action.dict()
     
     def reset(self) -> PharmacistObservation:
         """
-        Start new episode
+        Start new episode - with retry logic
         
         Returns:
             PharmacistObservation with patient case
         """
-        try:
-            response = self.client.post(f"{self.base_url}/reset")
-            response.raise_for_status()
-            data = response.json()
-            return PharmacistObservation(**data)
-        except httpx.HTTPStatusError as e:
-            raise RuntimeError(f"Reset failed: {e.response.status_code} - {e.response.text}")
-        except Exception as e:
-            raise RuntimeError(f"Reset error: {str(e)}")
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.client.post(f"{self.base_url}/reset")
+                response.raise_for_status()
+                data = response.json()
+                return PharmacistObservation(**data)
+            except httpx.ConnectError as e:
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Wait before retry
+                    continue
+                else:
+                    raise RuntimeError(f"Cannot connect to {self.base_url} after {max_retries} attempts")
+            except httpx.HTTPStatusError as e:
+                raise RuntimeError(f"Reset failed: {e.response.status_code} - {e.response.text}")
+            except Exception as e:
+                raise RuntimeError(f"Reset error: {str(e)}")
     
     def step(self, action: PharmacistAction) -> Tuple[PharmacistObservation, float, bool]:
         """
-        Take pharmacist action
+        Take pharmacist action - with retry logic
         
         Args:
             action: PharmacistAction with decision
@@ -81,28 +66,39 @@ class PharmaSimClient:
         Returns:
             (observation, reward, done)
         """
-        try:
-            response = self.client.post(
-                f"{self.base_url}/step",
-                json=self._serialize_action(action)
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            obs = PharmacistObservation(**data["observation"])
-            reward = data["reward"]
-            done = data["done"]
-            
-            return obs, reward, done
-            
-        except httpx.HTTPStatusError as e:
-            raise RuntimeError(f"Step failed: {e.response.status_code} - {e.response.text}")
-        except Exception as e:
-            raise RuntimeError(f"Step error: {str(e)}")
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = self.client.post(
+                    f"{self.base_url}/step",
+                    json=action.model_dump()
+                )
+                response.raise_for_status()
+                data = response.json()
+                
+                obs = PharmacistObservation(**data["observation"])
+                reward = data["reward"]
+                done = data["done"]
+                
+                return obs, reward, done
+                
+            except httpx.ConnectError as e:
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                else:
+                    raise RuntimeError(f"Cannot connect to {self.base_url}")
+            except httpx.HTTPStatusError as e:
+                raise RuntimeError(f"Step failed: {e.response.status_code} - {e.response.text}")
+            except Exception as e:
+                raise RuntimeError(f"Step error: {str(e)}")
     
     def close(self):
         """Close HTTP client"""
-        self.client.close()
+        try:
+            self.client.close()
+        except:
+            pass
     
     def __enter__(self):
         """Context manager support"""
@@ -116,11 +112,9 @@ class PharmaSimClient:
 # Test script
 if __name__ == "__main__":
     print("=== PharmaSimClient Test ===\n")
-    base_url = os.getenv("SERVER_URL", "http://localhost:8000")
-    print(f"Target server: {base_url}")
     
     try:
-        with PharmaSimClient(base_url=base_url) as client:
+        with PharmaSimClient(base_url="http://localhost:8000") as client:
             # Reset
             obs = client.reset()
             print(f"Task {obs.task_number}:")
@@ -131,7 +125,7 @@ if __name__ == "__main__":
             # Take action
             action = PharmacistAction(
                 decision="REJECT",
-                reasoning="Lactose excipient may be problematic for diabetic patient. Recommend lactose-free formulation."
+                reasoning="Checking for contraindications"
             )
             
             obs, reward, done = client.step(action)
@@ -139,8 +133,6 @@ if __name__ == "__main__":
             print(f"Reward: {reward:.2f}")
             print(f"Done: {done}\n")
             print(f"Feedback:\n{obs.message}")
-    except ConnectionError as e:
-        print(f"✗ Connection failed: {e}")
-        print("   Start the server first with:")
-        print("   uvicorn server.app:app --reload --host 127.0.0.1 --port 8000")
+    except Exception as e:
+        print(f"Error: {str(e)}", file=sys.stderr)
         sys.exit(1)
