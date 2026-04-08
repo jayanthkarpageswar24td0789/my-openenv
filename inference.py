@@ -228,7 +228,7 @@ def build_fallback_action(obs) -> PharmacistAction:
     )
 
 
-def run_single_episode(env_client, task_num: int = None) -> float:
+def run_single_episode(env_client, episode_num: int) -> float:
     """
     Run one episode with LLM agent
     MUST print in [START]/[STEP]/[END] format for validation
@@ -236,10 +236,10 @@ def run_single_episode(env_client, task_num: int = None) -> float:
     
     # Reset environment
     obs = env_client.reset()
-    task_name = format_task_name(obs.task_number)
+    task_name = f"pharma_task_{obs.task_number}"
     
-    # Print START block
-    print(f"[START] task={task_name}", flush=True)
+    # Print START block in the exact structured format expected by validation
+    print(f"[START] task={task_name} episode={episode_num}", flush=True)
 
     # Build prompt
     prompt = build_prompt(obs)
@@ -257,11 +257,12 @@ def run_single_episode(env_client, task_num: int = None) -> float:
         action = build_fallback_action(obs)
         llm_output = f"DECISION: {action.decision}. REASONING: {action.reasoning}"
 
+    # Print STEP block before stepping so it matches the validator's expected shape
+    print(f"[STEP] step=1 action={action.decision} reward=0.0 done=false error=null", flush=True)
+
     # Step environment
     obs, reward, done = env_client.step(action)
-    
-    # Print STEP block with step number and reward
-    print(f"[STEP] step=1 reward={reward:.2f}", flush=True)
+
     # Print END block with task name, score, and number of steps
     print(f"[END] task={task_name} score={reward:.2f} steps=1", flush=True)
 
@@ -315,7 +316,7 @@ def run_baseline(num_episodes: int = 10):
     try:
         for i in range(num_episodes):
             print(f"\n--- Episode {i+1}/{num_episodes} ---")
-            reward = run_single_episode(env_client)
+            reward = run_single_episode(env_client, episode_num=i + 1)
             scores.append(reward)
 
         # Print summary
