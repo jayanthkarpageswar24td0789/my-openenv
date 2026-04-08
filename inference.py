@@ -262,7 +262,6 @@ def run_single_episode(env_client, task_num: int = None) -> float:
     
     # Print STEP block with step number and reward
     print(f"[STEP] step=1 reward={reward:.2f}", flush=True)
-    
     # Print END block with task name, score, and number of steps
     print(f"[END] task={task_name} score={reward:.2f} steps=1", flush=True)
 
