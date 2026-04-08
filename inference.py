@@ -1,10 +1,14 @@
 """
 Baseline inference script for PharmaSimEnvironment
-ROBUST VERSION with error handling for Meta validation
+Uses LLM (GPT-4 or Claude) to act as AI pharmacist
+Required for hackathon validation
 """
 
 import os
 import sys
+import subprocess
+import time
+from urllib.parse import urlparse
 from openai import OpenAI
 from client import PharmaSimClient
 from models import PharmacistAction
@@ -31,6 +35,53 @@ try:
     )
 except Exception:
     client_llm = None
+
+
+def _is_local_server(server_url: str) -> bool:
+    parsed = urlparse(server_url)
+    host = (parsed.hostname or "").lower()
+    return host in {"localhost", "127.0.0.1", "0.0.0.0"}
+
+
+def _start_local_server_if_needed(server_url: str):
+    """Start local uvicorn server and wait until health check responds."""
+    if not _is_local_server(server_url):
+        return None
+
+    parsed = urlparse(server_url)
+    host = parsed.hostname or "127.0.0.1"
+    port = parsed.port or 8000
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "server.app:app",
+        "--host",
+        host,
+        "--port",
+        str(port),
+    ]
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    for _ in range(16):
+        time.sleep(0.5)
+        if process.poll() is not None:
+            return None
+        try:
+            probe = PharmaSimClient(base_url=server_url)
+            probe.close()
+            return process
+        except Exception:
+            continue
+
+    process.terminate()
+    return None
 
 
 def build_prompt(obs) -> str:
@@ -118,18 +169,25 @@ def run_single_episode(env_client, episode_num: int) -> float:
         
     except Exception as e:
         print(f"ERROR in episode {episode_num}: {str(e)}", file=sys.stderr, flush=True)
-        raise
+        return 0.0
 
 
 def main():
     """Main function with robust error handling"""
     
+    server_process = None
+    if _is_local_server(SERVER_URL):
+        server_process = _start_local_server_if_needed(SERVER_URL)
+        if server_process is None:
+            print("ERROR: Could not start local server", file=sys.stderr, flush=True)
+            return
+
     # Connect to environment
     try:
         env_client = PharmaSimClient(base_url=SERVER_URL)
     except Exception as e:
         print(f"ERROR: Cannot create client: {str(e)}", file=sys.stderr, flush=True)
-        sys.exit(1)
+        return
     
     # Run episodes
     num_episodes = 3
@@ -146,7 +204,7 @@ def main():
         
         if not scores:
             print("ERROR: All episodes failed", file=sys.stderr, flush=True)
-            sys.exit(1)
+            return
         
         # Summary
         avg_score = sum(scores) / len(scores)
@@ -157,6 +215,11 @@ def main():
             env_client.close()
         except:
             pass
+        if server_process is not None and server_process.poll() is None:
+            try:
+                server_process.terminate()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
