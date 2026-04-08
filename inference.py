@@ -236,15 +236,14 @@ def run_single_episode(env_client, task_num: int = None) -> float:
     
     # Reset environment
     obs = env_client.reset()
-
-    print("=" * 60)
-    print("[START] Running episode...")
-    print(f"[TASK {obs.task_number}] {format_task_name(obs.task_number)}...")
+    task_name = format_task_name(obs.task_number)
+    
+    # Print START block
+    print(f"[START] task={task_name}", flush=True)
 
     # Build prompt
     prompt = build_prompt(obs)
 
-    print(f"[LLM] Calling {MODEL_NAME}...")
     try:
         llm_output = call_llm(prompt)
         if llm_output is None:
@@ -258,14 +257,14 @@ def run_single_episode(env_client, task_num: int = None) -> float:
         action = build_fallback_action(obs)
         llm_output = f"DECISION: {action.decision}. REASONING: {action.reasoning}"
 
-    print(f"[LLM] Response: {compact_text(llm_output)}")
-
     # Step environment
-    print(f"[STEP] Decision: {action.decision}")
     obs, reward, done = env_client.step(action)
-
-    print(f"[END] Reward: {reward:.2f}, Done: {done}")
-    print("=" * 60)
+    
+    # Print STEP block with step number and reward
+    print(f"[STEP] step=1 reward={reward:.2f}", flush=True)
+    
+    # Print END block with task name, score, and number of steps
+    print(f"[END] task={task_name} score={reward:.2f} steps=1", flush=True)
 
     return reward
 
