@@ -1,5 +1,5 @@
 ---
-title: PharmaSimEnvironment
+title: PharmaGuard AI
 emoji: "💊"
 colorFrom: blue
 colorTo: green
@@ -8,279 +8,350 @@ app_port: 7860
 pinned: false
 ---
 
-# PharmaSimEnvironment - Drug Formulation Validation
+# 💊 PharmaGuard AI - Clinical Prescription Validator
 
-An OpenEnv environment for training AI agents to validate pharmaceutical formulations for patient safety.
+> AI-powered clinical pharmacist that prevents medication errors before they reach patients.
 
-## Real-World Utility
-
-Pharmacists review 100+ prescriptions daily, checking for:
-- **Contraindications** - ingredients unsafe for specific patients
-- **Drug interactions** - dangerous combinations with existing medications  
-- **Dosage errors** - wrong doses for age/weight/organ function
-
-**Impact:**
-- 200,000+ medication errors annually in US healthcare
-- $30B+ in preventable adverse drug event costs
-- 40% pharmacist workload reduction potential with AI assistance
-
-This environment trains AI agents to catch these errors before they reach patients.
+An OpenEnv-powered AI environment where an intelligent agent acts as a clinical pharmacist, validating prescriptions for patient safety, drug interactions, and dosage correctness.
 
 ---
 
-## Three Tasks (Easy → Medium → Hard)
+## 🚨 Problem
 
-### Task 1: Basic Contraindication Check (Easy)
-**Scenario:** Patient has diabetes, formula contains lactose excipient  
-**Goal:** Identify contraindicated ingredient  
-**Success criteria:** Agent flags lactose issue and suggests alternative  
-**Example:**
-Patient: 65yo, Type 2 Diabetes
-Formula: Metformin 500mg with Lactose excipient
-✓ Correct: REJECT - "Lactose may be problematic, suggest lactose-free"
-✗ Wrong: APPROVE
+Medication errors are a major global healthcare issue:
 
----
+- 200,000+ deaths annually due to adverse drug events
+- $30B+ healthcare costs from preventable medication errors
+- Pharmacists manually review 100+ prescriptions daily
 
-### Task 2: Dosage Optimization (Medium)
-**Scenario:** CKD patient prescribed standard NSAID dose  
-**Goal:** Adjust dose based on kidney function (eGFR)  
-**Success criteria:** Recommends dose reduction or safer alternative  
-**Example:**
-Patient: 58yo, CKD Stage 3, eGFR 45
-Formula: Ibuprofen 400mg TID
-✓ Correct: MODIFY - "NSAIDs nephrotoxic in CKD, reduce to 200mg BID or use acetaminophen"
-✗ Wrong: APPROVE full dose
+Many errors involve:
+
+- Drug interactions
+- Incorrect dosage
+- Patient-specific contraindications
 
 ---
 
-### Task 3: Multi-Drug Interaction Analysis (Hard)
-**Scenario:** Elderly patient on multiple meds gets new antibiotic  
-**Goal:** Identify critical drug interactions  
-**Success criteria:** Catches interaction + suggests alternative + monitoring plan  
-**Example:**
-Patient: 72yo on Warfarin 5mg (anticoagulant)
-New prescription: Ciprofloxacin 500mg for UTI
-✓ Correct: REJECT - "Cipro increases Warfarin → bleeding risk. Use Nitrofurantoin instead + monitor INR"
-✗ Wrong: APPROVE without interaction check
+## 💡 Solution
+
+PharmaGuard AI simulates real-world pharmacy validation using:
+
+- 🧠 Hybrid AI Agent (Rules + LLM)
+- ⚕️ Clinical safety reasoning
+- 🔍 Explainable decision-making
+- 🧪 Multi-scenario evaluation environment
 
 ---
 
-## Quick Start
+## ⚙️ System Architecture
 
-### Local Testing
+```text
+Client → FastAPI Server → OpenEnv Environment → AI Agent
+                                              |- Clinical Rules
+                                              '- LLM Reasoning
+```
+
+---
+
+## 🚀 Key Features
+
+### ✅ Hybrid Intelligence
+
+- Rule-based clinical safety checks
+- LLM-powered reasoning (fallback-safe)
+
+### ✅ Explainable AI (XAI)
+
+- Every decision includes human-readable reasoning
+
+### ✅ Robust and Reliable
+
+- Safe fallback system to avoid crashes
+- Retry-based API communication
+
+### ✅ Real-World Simulation
+
+- Based on real pharmacology principles
+- Covers multiple clinical scenarios
+
+---
+
+## 🧪 Tasks (Easy -> Hard)
+
+### 🔹 Task 1: Contraindication Detection
+
+Detect unsafe ingredients for specific patients.
+
+Example: Lactose in diabetic patient
+
+### 🔹 Task 2: Dosage Adjustment
+
+Adjust drug dosage based on organ function.
+
+Example: NSAIDs in CKD patients
+
+### 🔹 Task 3: Drug Interaction Analysis
+
+Detect multi-drug interaction risks.
+
+Example: Warfarin + Antibiotics -> bleeding risk
+
+---
+
+## 🧠 Agent Design
+
+### Step 1: Clinical Rules (Deterministic)
+
+- Warfarin + high-risk interacting drugs -> REJECT
+- Kidney disease + nephrotoxic drug -> MODIFY
+
+### Step 2: LLM Reasoning
+
+- Context-aware medical decision making
+
+### Step 3: Safe Fallback
+
+- Always returns valid output (no crashes)
+
+---
+
+## 📊 Example Output
+
+```text
+[START] task=pharma_task_1 episode=1
+[STEP] step=1 action=REJECT reward=0.0 done=false error=null
+[END] task=pharma_task_1 score=1.0 steps=1
+```
+
+---
+
+## ⚡ Quick Start
+
+### Local Run
+
 ```bash
-# Install dependencies
 pip install -r requirements.txt
+uvicorn server.app:app --host 0.0.0.0 --port 8000
 
-# Start server
-uvicorn server.app:app --reload --host 0.0.0.0 --port 8000
-
-# In another terminal, test client
-python client.py
-
-# Run baseline with LLM
-export OPENAI_API_KEY="sk-..."
+# Run inference (Windows)
+set LOCAL_DEV=1
 python inference.py
 
-# Or use HuggingFace Inference API
-export HF_TOKEN="hf_your-token-here"
-export API_BASE_URL="https://api-inference.huggingface.co/v1"
-export MODEL_NAME="meta-llama/Meta-Llama-3-8B-Instruct"
-python inference.py 3
+# Run inference (macOS/Linux)
+export LOCAL_DEV=1
+python inference.py
 ```
 
-### Docker
+### Docker (HF Spaces Compatible)
+
 ```bash
-# Build
 docker build -t pharma-env .
-
-# Run
 docker run -p 7860:7860 pharma-env
-
-# Test
-curl http://localhost:7860/
 ```
 
 ---
 
-## 🔌 API Reference
+## 🔌 API
 
-### `POST /reset`
-Start new episode, returns patient case
+### POST /reset
 
-**Response:**
-```json
-{
-  "patient": {
-    "age": 65,
-    "conditions": ["Type 2 Diabetes"],
-    "current_medications": [],
-    "lab_values": {}
-  },
-  "proposed_formula": {
-    "active_ingredients": ["Metformin 500mg"],
-    "excipients": ["Lactose", "Starch"],
-    "frequency": "Twice daily"
-  },
-  "task_number": 1,
-  "done": false,
-  "message": "Analyze this case..."
-}
-```
+Returns a new patient case.
 
-### `POST /step`
-Submit pharmacist decision
+### POST /step
 
-**Request:**
+Submit decision payload:
+
 ```json
 {
   "decision": "REJECT",
-  "reasoning": "Lactose contraindicated for diabetic patient",
-  "suggested_changes": "Use lactose-free formulation"
+  "reasoning": "Drug interaction risk",
+  "suggested_changes": "Use safer alternative"
 }
 ```
 
-**Response:**
+---
+
+## 📈 Scoring System
+
+| Score | Meaning |
+| --- | --- |
+| 1.0 | Fully correct |
+| 0.7 | Partially correct |
+| 0.4 | Weak reasoning |
+| 0.0 | Unsafe decision |
+
+---
+
+## 🧪 Real-World Medical Coverage
+
+- Drug interactions (Warfarin, NSAIDs)
+- Chronic diseases (Diabetes, CKD)
+- Elderly polypharmacy cases
+- Dosage safety checks
+
+---
+
+## 🔬 Data Sources
+
+- FDA Drug Interaction Data
+- RxNorm (NIH)
+- Clinical guidelines (synthetic cases)
+
+---
+
+## ⚠️ Disclaimer
+
+For research and educational use only.
+
+Not intended for real clinical decisions.
+
+---
+
+## 🌐 Why This Environment Matters
+
+This project demonstrates the power of OpenEnv in real-world domains:
+
+- Converts healthcare decision-making into a structured agent environment
+- Enables benchmarking of AI agents on safety-critical tasks
+- Supports reinforcement learning for medical reasoning
+- Shows how LLMs + rules can work together in production systems
+
+This makes PharmaGuard AI not just a demo, but a scalable foundation for real-world AI deployment.
+
+---
+
+## 📊 Evaluation Capability
+
+PharmaGuard AI enables benchmarking of different AI agents:
+
+- Compare rule-based vs LLM-based performance
+- Measure safety accuracy across tasks
+- Track reward scores across scenarios
+
+This allows researchers to evaluate how well AI systems handle real-world clinical decision-making.
+
+---
+
+## 🔮 Future Scope
+
+- Integration with real-world drug databases (FDA APIs)
+- Support for personalized medicine (genomics, allergies)
+- Multi-step clinical decision workflows
+- RL training for improving agent performance
+- Deployment as clinical decision support tool
+
+This project can evolve into a real-world AI assistant for pharmacists.
+
+---
+
+## 🏆 Hackathon Submission
+
+- Event: Meta OpenEnv Hackathon
+- Track: Real-World AI Environments
+
+### 🔥 Highlights
+
+- OpenEnv compliant
+- Docker deployed (HF Spaces)
+- Hybrid AI agent (Rules + LLM)
+- Explainable medical reasoning
+- Zero-crash inference system
+
+### 👨‍💻 Author
+
+Jayanth
+
+HF Space: https://huggingface.co/spaces/YOUR_USERNAME/pharma-env
+
+### 💡 Vision
+
+"AI-assisted pharmacists to reduce medication errors and improve patient safety globally."
+
+---
+
+## 🧪 Strong Medical Test Cases (Append Safely)
+
+Add these entries inside `data/task_cases.json`.
+
+- Do not remove old cases.
+- Append only.
+
+### ✅ Case 1: Elderly + Polypharmacy
+
 ```json
 {
-  "observation": {...},
-  "reward": 1.0,
-  "done": true
+  "patient": {
+    "age": 75,
+    "conditions": ["hypertension"],
+    "current_medications": ["warfarin"]
+  },
+  "proposed_formula": {
+    "active_ingredients": ["aspirin"],
+    "frequency": "once daily"
+  },
+  "correct_action": "REJECT"
 }
 ```
 
----
+Reason: Bleeding risk (warfarin + aspirin)
 
-## Baseline Scores
+### ✅ Case 2: Kidney Disease Risk
 
-Tested with GPT-4 and Claude-3.5-Sonnet:
+```json
+{
+  "patient": {
+    "age": 60,
+    "conditions": ["kidney_disease"],
+    "current_medications": []
+  },
+  "proposed_formula": {
+    "active_ingredients": ["ibuprofen"],
+    "frequency": "three times daily"
+  },
+  "correct_action": "MODIFY"
+}
+```
 
-| Task | GPT-4 | Claude-3.5 | Human Pharmacist |
-|------|-------|------------|------------------|
-| Task 1 (Easy) | 0.85 | 0.90 | 0.95 |
-| Task 2 (Medium) | 0.70 | 0.75 | 0.92 |
-| Task 3 (Hard) | 0.60 | 0.65 | 0.88 |
+Reason: NSAIDs can be harmful in CKD
 
-**Average:** GPT-4 = 0.72, Claude = 0.77, Human = 0.92
+### ✅ Case 3: Pregnancy Contraindication
 
----
+```json
+{
+  "patient": {
+    "age": 30,
+    "conditions": ["pregnancy"],
+    "current_medications": []
+  },
+  "proposed_formula": {
+    "active_ingredients": ["isotretinoin"],
+    "frequency": "once daily"
+  },
+  "correct_action": "REJECT"
+}
+```
 
-## Project Structure
-pharma_env/
-├── models.py              # Pydantic data models
-├── environment.py         # Core game logic
-├── client.py              # HTTP client
-├── inference.py           # Baseline LLM agent
-├── server/
-│   └── app.py            # FastAPI server
-├── data/
-│   ├── task_cases.json   # Patient scenarios
-│   ├── contraindications.json
-│   └── drug_interactions.json
-├── tests/
-│   └── test_environment.py
-├── Dockerfile
-├── requirements.txt
-└── README.md
+Reason: Highly teratogenic drug
 
----
+### ✅ Case 4: Diabetes + Sugar Excipient
 
-## Grading Rubric
+```json
+{
+  "patient": {
+    "age": 55,
+    "conditions": ["diabetes"],
+    "current_medications": []
+  },
+  "proposed_formula": {
+    "active_ingredients": ["cough syrup"],
+    "excipients": ["sucrose"],
+    "frequency": "twice daily"
+  },
+  "correct_action": "MODIFY"
+}
+```
 
-### Task 1 Scoring:
-- **1.0:** Identifies lactose + suggests alternative
-- **0.7:** Identifies issue, weak alternative
-- **0.4:** Mentions excipients vaguely
-- **0.0:** Misses contraindication
-
-### Task 2 Scoring:
-- **1.0:** Correct dose adjustment + reasoning (eGFR-based)
-- **0.7:** Identifies need but wrong calculation
-- **0.4:** Vague kidney concern
-- **0.0:** Approves dangerous dose
-
-### Task 3 Scoring:
-- **1.0:** Catches interaction + alternative + monitoring
-- **0.7:** Catches interaction, no alternative
-- **0.4:** Vague interaction mention
-- **0.0:** Approves critical interaction
-
----
-
-## Medical Data Sources
-
-All data derived from publicly available sources:
-
-- **FDA OpenFDA API** - Drug interaction database
-- **RxNorm (NLM)** - Drug terminology
-- **UpToDate/Lexicomp** - Clinical guidelines (synthetic cases based on principles)
-- **Synthetic patient data** - HIPAA-compliant generated cases
-
-**References:**
-- FDA Drug Interactions: https://www.fda.gov/drugs/drug-interactions
-- RxNorm: https://www.nlm.nih.gov/research/umls/rxnorm/
-- Renal dosing: https://kdigo.org/guidelines/
-
----
-
-## Disclaimer
-
-**FOR EDUCATIONAL AND RESEARCH USE ONLY**
-
-This environment is designed for:
-- Training AI/ML models
-- Reinforcement learning research  
-- Educational demonstrations
-
-**NOT FOR:**
-- Clinical decision-making
-- Real patient care
-- Medical advice
-
-Always consult licensed healthcare professionals for actual medical decisions.
-
----
-
-## License
-
-MIT License - See LICENSE file
-
----
-
-## Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create feature branch
-3. Add tests for new features
-4. Submit pull request
-
----
-
-## Contact
-
-**Author:** [Your Name]  
-**Email:** your.email@example.com  
-**HF Space:** https://huggingface.co/spaces/YOUR_USERNAME/pharma-env  
-**GitHub:** https://github.com/YOUR_USERNAME/pharma-env  
-
----
-
-## Hackathon Submission
-
-**Event:** Meta OpenEnv Hackathon - Round 1  
-**Category:** Real-world AI agent environments  
-**Submission Date:** April 2026  
-
-**Key Features:**
-- 3 tasks (easy/medium/hard)
-- Realistic medical scenarios
-- Graded scoring (0.0-1.0)
-- Docker containerized
-- Deployed to HF Spaces
-- Baseline inference script included
-- OpenEnv spec compliant
+Reason: Sugar content risk in diabetes
 
 ---
 
