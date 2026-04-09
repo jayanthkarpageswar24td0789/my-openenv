@@ -161,6 +161,54 @@
         "0.3": "Vague concern about labs",
         "0.0": "Approves in high-risk patient"
       }
+    },
+    {
+      "id": "case_303",
+      "patient": {
+        "age": 68,
+        "conditions": ["hypertension", "diabetes"],
+        "current_medications": ["warfarin", "metformin"],
+        "lab_values": {}
+      },
+      "formula": {
+        "active_ingredients": ["ciprofloxacin"],
+        "excipients": [],
+        "frequency": "twice daily",
+        "indication": "infection"
+      },
+      "correct_action": "REJECT"
+    },
+    {
+      "id": "case_304",
+      "patient": {
+        "age": 70,
+        "conditions": ["hypertension"],
+        "current_medications": ["warfarin", "aspirin"],
+        "lab_values": {}
+      },
+      "formula": {
+        "active_ingredients": ["ibuprofen"],
+        "excipients": [],
+        "frequency": "daily",
+        "indication": "pain"
+      },
+      "correct_action": "REJECT"
+    },
+    {
+      "id": "case_305",
+      "patient": {
+        "age": 74,
+        "conditions": ["hypertension", "diabetes"],
+        "current_medications": ["warfarin", "aspirin"],
+        "lab_values": {}
+      },
+      "formula": {
+        "active_ingredients": ["ibuprofen"],
+        "excipients": ["Lactose"],
+        "frequency": "daily",
+        "indication": "pain"
+      },
+      "correct_action": "REJECT"
     }
   ]
 }

@@ -55,24 +55,28 @@ Client → FastAPI Server → OpenEnv Environment → AI Agent
 
 ## 🚀 Key Features
 
-### ✅ Hybrid Intelligence
+### Hybrid Intelligence
 
 - Rule-based clinical safety checks
 - LLM-powered reasoning (fallback-safe)
 
-### ✅ Explainable AI (XAI)
+### Explainable AI (XAI)
 
 - Every decision includes human-readable reasoning
 
-### ✅ Robust and Reliable
+### Robust and Reliable
 
 - Safe fallback system to avoid crashes
 - Retry-based API communication
+- Deterministic grading system with reward shaping (penalty + bonus signals)
 
-### ✅ Real-World Simulation
+### Real-World Simulation
 
 - Based on real pharmacology principles
 - Covers multiple clinical scenarios
+
+### Safety-First Design
+- Designed to prioritize patient safety over model confidence
 
 ---
 
@@ -119,7 +123,7 @@ Example: Warfarin + Antibiotics -> bleeding risk
 
 ```text
 [START] task=pharma_task_1 episode=1
-[STEP] step=1 action=REJECT reward=0.0 done=false error=null
+[STEP] step=1 action=REJECT reward=0.3 done=false error=null
 [END] task=pharma_task_1 score=1.0 steps=1
 ```
 
@@ -169,16 +173,119 @@ Submit decision payload:
 }
 ```
 
+### GET /health
+
+Returns server health status.
+
+---
+
+## 🔌 OpenEnv Compatibility
+
+PharmaGuard AI follows the OpenEnv interface:
+
+### Endpoints
+
+- `POST /reset` -> Returns new patient case
+- `POST /step` -> Accepts agent decision
+- `GET /health` -> Server health check
+
+### Episode Flow
+
+1. reset() -> Patient case
+2. step() -> Partial reward (0.3)
+3. step() -> Final evaluation (0.0-1.0)
+
+### Action Format
+
+```json
+{
+  "decision": "APPROVE | REJECT | MODIFY",
+  "reasoning": "Clinical explanation",
+  "suggested_changes": "Optional"
+}
+```
+
+---
+
+## 🚀 Deployment (Hugging Face Spaces)
+
+```bash
+openenv push
+```
+
+Options:
+
+```bash
+openenv push --repo-id your-username/pharma-env
+openenv push --private
+```
+
+After deployment:
+
+- Web UI -> /web
+- API Docs -> /docs
+- Health -> /health
+
+---
+
+## ❤️ Health Check
+
+```bash
+curl http://localhost:8000/health
+```
+
+Response:
+
+```json
+{
+  "status": "healthy",
+  "service": "pharma-env"
+}
+```
+
+---
+
+## 🔁 Episode Structure
+
+Each episode consists of 2 steps:
+
+1. Initial evaluation -> reward = 0.3
+2. Final grading -> reward = 0.0 - 1.0
+
+This simulates real pharmacist workflows:
+
+- Initial screening
+- Final validation
+
 ---
 
 ## 📈 Scoring System
 
 | Score | Meaning |
 | --- | --- |
-| 1.0 | Fully correct |
-| 0.7 | Partially correct |
-| 0.4 | Weak reasoning |
-| 0.0 | Unsafe decision |
+| 1.0 | Best possible grading outcome |
+| 0.5+ | Correct decision credit |
+| 0.3 | Partial step-1 evaluation |
+| 0.0 | Unsafe or empty response |
+
+## 🧠 Advanced Environment Design
+
+PharmaGuard AI includes:
+
+- Multi-step episode design (decision -> evaluation)
+- Graded reward system (0.0 -> 1.0 scoring)
+- Explanation-aware scoring (reasoning quality evaluation)
+- Clinical risk classification (LOW / MEDIUM / HIGH)
+
+This ensures meaningful learning signals and realistic clinical simulation.
+
+## 🔁 Deterministic Evaluation
+
+All grading logic is rule-based and deterministic, ensuring:
+
+- Reproducible scores
+- Consistent evaluation across agents
+- Reliable benchmarking
 
 ---
 
@@ -216,7 +323,7 @@ This project demonstrates the power of OpenEnv in real-world domains:
 - Supports reinforcement learning for medical reasoning
 - Shows how LLMs + rules can work together in production systems
 
-This makes PharmaGuard AI not just a demo, but a scalable foundation for real-world AI deployment.
+This transforms PharmaGuard AI from a prototype into a real-world deployable safety system.
 
 ---
 
@@ -259,13 +366,14 @@ This project can evolve into a real-world AI assistant for pharmacists.
 
 ### 👨‍💻 Author
 
-Jayanth
+Jayanth Karpageswar
 
-HF Space: https://huggingface.co/spaces/YOUR_USERNAME/pharma-env
+HF Space: https://huggingface.co/spaces/jayanth25r/pharma-env
+GitHub: https://github.com/jayanthkarpageswar24td0789/my-openenv
 
 ### 💡 Vision
 
-"AI-assisted pharmacists to reduce medication errors and improve patient safety globally."
+"Building AI systems that act as a safety layer between prescriptions and patients."
 
 ---
 
@@ -285,7 +393,7 @@ Add these entries inside `data/task_cases.json`.
     "conditions": ["hypertension"],
     "current_medications": ["warfarin"]
   },
-  "proposed_formula": {
+  "formula": {
     "active_ingredients": ["aspirin"],
     "frequency": "once daily"
   },

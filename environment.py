@@ -117,6 +117,32 @@ class PharmaSimEnvironment:
                 }
             ]
         }
+
+    def _determine_risk_level(self) -> str:
+        """Classify the current case into a simple clinical risk tier."""
+        patient = self.current_case.get("patient", {}) if self.current_case else {}
+        medications = [med.lower() for med in patient.get("current_medications", [])]
+        conditions = [condition.lower() for condition in patient.get("conditions", [])]
+
+        if any("warfarin" in medication for medication in medications):
+            return "HIGH"
+
+        if any("kidney_disease" in condition or "ckd" in condition or "kidney" in condition for condition in conditions):
+            return "MEDIUM"
+
+        return "LOW"
+
+    def _build_observation(self, done: bool, message: str, reward: float) -> PharmacistObservation:
+        """Create an observation for the current case with derived risk metadata."""
+        return PharmacistObservation(
+            patient=PatientCase(**self.current_case["patient"]),
+            proposed_formula=DrugFormula(**self.current_case["formula"]),
+            task_number=self.state.task_id,
+            done=done,
+            message=message,
+            reward=reward,
+            risk_level=self._determine_risk_level(),
+        )
     
     def reset(self) -> PharmacistObservation:
         """
@@ -150,16 +176,11 @@ class PharmaSimEnvironment:
         )
         
         # Build observation (what agent sees)
-        observation = PharmacistObservation(
-            patient=PatientCase(**self.current_case["patient"]),
-            proposed_formula=DrugFormula(**self.current_case["formula"]),
-            task_number=task_id,
-            done=False,
-            message=f"Task {task_id}: {task_name}\n\nAnalyze this patient case and validate the proposed formula for safety and efficacy.",
-            reward=0.0
+        message = (
+            f"Task {task_id}: {task_name}\n\n"
+            "Analyze this patient case and validate the proposed formula for safety and efficacy."
         )
-        
-        return observation
+        return self._build_observation(done=False, message=message, reward=0.0)
     
     def step(self, action: PharmacistAction) -> Tuple[PharmacistObservation, float, bool]:
         """
@@ -174,86 +195,52 @@ class PharmaSimEnvironment:
         if self.state is None:
             raise RuntimeError("Environment not initialized. Call reset() first.")
         
-        # Grade the action
-        reward = self._grade_action(action)
-        self.state.score = reward
         self.state.episode_step += 1
-        
-        # Episode ends after one decision (single-turn tasks)
-        done = True
-        
-        # Build result message
+
+        if self.state.episode_step == 1:
+            reward = 0.3
+            self.state.score = reward
+            message = (
+                "Step 1 complete: partial evaluation recorded. "
+                "Submit the second step for final grading."
+            )
+            observation = self._build_observation(done=False, message=message, reward=reward)
+            return observation, reward, False
+
+        reward = self.evaluate_action(action)
+        self.state.score = reward
+
         result_message = self._build_result_message(action, reward)
-        
-        # Return final observation
-        observation = PharmacistObservation(
-            patient=PatientCase(**self.current_case["patient"]),
-            proposed_formula=DrugFormula(**self.current_case["formula"]),
-            task_number=self.state.task_id,
-            done=done,
-            message=result_message,
-            reward=reward
-        )
-        
-        return observation, reward, done
+        observation = self._build_observation(done=True, message=result_message, reward=reward)
+
+        return observation, reward, True
     
-    def _grade_action(self, action: PharmacistAction) -> float:
+    def evaluate_action(self, action: PharmacistAction) -> float:
         """
-        Grade pharmacist decision based on rubric
-        
-        Scoring:
-        - 0.99: Perfect (correct decision + good reasoning)
-        - 0.7: Good (correct decision, weak reasoning OR wrong decision but identifies issue)
-        - 0.4: Partial (mentions relevant concern but wrong conclusion)
-        - 0.01: Wrong (dangerous decision or no reasoning)
+        Grade pharmacist decision using a deterministic rule-based rubric.
         """
-        correct_decision = self.state.correct_action
-        agent_decision = action.decision
-        reasoning = action.reasoning.lower()
-        
-        # Perfect score: correct decision
-        if agent_decision == correct_decision:
-            # Check reasoning quality
-            if self.state.task_id == 1:
-                # Task 1: Should mention lactose or excipient
-                if "lactose" in reasoning or "excipient" in reasoning:
-                    return 0.99
-                else:
-                    return 0.7  # Right answer but weak reasoning
-            
-            elif self.state.task_id == 2:
-                # Task 2: Should mention kidney/renal/dose/nsaid
-                keywords = ["kidney", "renal", "ckd", "dose", "nsaid", "nephrotoxic"]
-                if any(kw in reasoning for kw in keywords):
-                    return 0.99
-                else:
-                    return 0.7
-            
-            else:  # Task 3
-                # Task 3: Should mention interaction or specific drugs
-                keywords = ["interaction", "warfarin", "ciprofloxacin", "bleeding", "inr"]
-                if any(kw in reasoning for kw in keywords):
-                    return 0.99
-                else:
-                    return 0.7
-        
-        # Partial credit: wrong decision but identifies safety concern
+        score = 0.0
+        reasoning = (action.reasoning or "").lower()
+
+        if action.decision == self.state.correct_action:
+            score += 0.6
         else:
-            # Check if reasoning shows awareness of issue
-            if self.state.task_id == 1:
-                if "lactose" in reasoning or "diabetic" in reasoning or "contraindic" in reasoning:
-                    return 0.4  # Saw the issue but wrong action
-            
-            elif self.state.task_id == 2:
-                if any(kw in reasoning for kw in ["kidney", "renal", "dose", "reduce"]):
-                    return 0.4
-            
-            else:  # Task 3
-                if any(kw in reasoning for kw in ["interaction", "warfarin", "monitor"]):
-                    return 0.4
-            
-            # No relevant reasoning - complete miss
-            return 0.01
+            score -= 0.2
+
+        if action.reasoning and len(action.reasoning) > 10:
+            score += 0.3
+
+        if action.suggested_changes:
+            score += 0.2
+
+        if "bleeding" in reasoning or "interaction" in reasoning:
+            score += 0.2
+
+        return max(0.0, min(score, 1.0))
+
+    def _grade_action(self, action: PharmacistAction) -> float:
+        """Backward-compatible wrapper for older callers."""
+        return self.evaluate_action(action)
     
     def _build_result_message(self, action: PharmacistAction, reward: float) -> str:
         """Build feedback message for agent"""

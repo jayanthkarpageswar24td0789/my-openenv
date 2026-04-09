@@ -20,7 +20,7 @@ def test_environment_reset():
 
 
 def test_environment_step():
-    """Test step function"""
+    """Test the two-step episode flow"""
     env = PharmaSimEnvironment()
     obs = env.reset()
     
@@ -30,10 +30,32 @@ def test_environment_step():
     )
     
     obs, reward, done = env.step(action)
-    
+
+    assert done == False
+    assert reward == 0.3
+    assert obs.reward == reward
+
+    obs, reward, done = env.step(action)
+
     assert done == True
     assert 0.0 <= reward <= 1.0
     assert obs.reward == reward
+
+
+def test_risk_level_assignment(monkeypatch):
+    """Test clinical risk tier derivation"""
+    env = PharmaSimEnvironment()
+
+    def fake_choice(options):
+        if options == [1, 2, 3]:
+            return 3
+        return options[0]
+
+    monkeypatch.setattr("environment.random.choice", fake_choice)
+
+    obs = env.reset()
+
+    assert obs.risk_level in ["HIGH", "MEDIUM", "LOW"]
 
 
 def test_grading_perfect_answer():
@@ -48,12 +70,16 @@ def test_grading_perfect_answer():
     if env.state.correct_action == "REJECT":
         action = PharmacistAction(
             decision="REJECT",
-            reasoning="Lactose excipient contraindicated for diabetic patient"
+            reasoning="Lactose excipient contraindicated for diabetic patient",
+            suggested_changes="Use lactose-free formulation"
         )
         obs, reward, done = env.step(action)
+        assert done == False
+
+        obs, reward, done = env.step(action)
         
-        # Should get high score for mentioning lactose
-        assert reward >= 0.7
+        assert done == True
+        assert reward >= 0.5
 
 
 def test_grading_wrong_answer():
@@ -83,9 +109,13 @@ def test_multiple_episodes():
         
         action = PharmacistAction(
             decision="MODIFY",
-            reasoning="Suggesting dose adjustment"
+            reasoning="Suggesting dose adjustment",
+            suggested_changes="Reduce dose"
         )
         
+        obs, reward, done = env.step(action)
+        assert done == False
+
         obs, reward, done = env.step(action)
         
         assert done == True

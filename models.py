@@ -68,6 +68,7 @@ class PharmacistObservation(Observation):
     done: bool = Field(default=False, description="Whether episode has ended")
     message: str = Field(default="", description="Instruction or feedback message")
     reward: float = Field(default=0.0, description="Reward signal for RL training")
+    risk_level: str = Field(default="LOW", description="Clinical risk classification")
 
 
 class PharmacistState(State):

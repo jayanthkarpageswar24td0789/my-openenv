@@ -66,9 +66,10 @@ def clinical_rules(observation):
         patient = safe_get(observation, "patient", {})
         meds = patient.get("current_medications", [])
         conditions = patient.get("conditions", [])
+        proposed_formula = safe_get(observation, "proposed_formula", {})
 
         # Rule 1: Warfarin risk
-        if "warfarin" in meds:
+        if any("warfarin" in med.lower() for med in meds):
             return {
                 "decision": "REJECT",
                 "reasoning": "High bleeding risk due to warfarin interaction",
@@ -77,13 +78,35 @@ def clinical_rules(observation):
             }
 
         # Rule 2: Kidney disease
-        if "kidney_disease" in conditions:
+        if any("kidney" in c.lower() or "ckd" in c.lower() for c in conditions):
             return {
                 "decision": "MODIFY",
                 "reasoning": "Dose adjustment required for kidney disease",
                 "suggested_changes": "Reduce dosage",
                 "warnings": ["Renal risk"]
             }
+
+        # Diabetes + sugar excipient
+        if "diabetes" in [c.lower() for c in conditions]:
+            excipients = proposed_formula.get("excipients", [])
+            if any("sucrose" in e.lower() or "lactose" in e.lower() for e in excipients):
+                return {
+                    "decision": "MODIFY",
+                    "reasoning": "Sugar-based excipient risky for diabetic patient",
+                    "suggested_changes": "Use sugar-free formulation",
+                    "warnings": ["Glycemic risk"]
+                }
+
+        # Elderly + NSAIDs
+        if safe_get(patient, "age", 0) > 65:
+            active_ingredients = proposed_formula.get("active_ingredients", [])
+            if any("ibuprofen" in drug.lower() for drug in active_ingredients):
+                return {
+                    "decision": "MODIFY",
+                    "reasoning": "NSAIDs risky in elderly (GI bleeding risk)",
+                    "suggested_changes": "Use safer alternative",
+                    "warnings": ["Elderly risk"]
+                }
 
         return None
 
@@ -208,32 +231,43 @@ def post_with_retry(client, endpoint, json=None, retries=3):
 # ==============================
 
 def run_episode(task_name, episode_num):
-    steps = 1
     total_reward = 0.0
+    steps = 0
 
     log(f"[START] task={task_name} episode={episode_num}")
 
     try:
         with httpx.Client() as client:
             observation = post_with_retry(client, "/reset")
-            action = get_action(observation or {})
+            current_observation = observation or {}
 
-            log(
-                f"[STEP] step=1 action={action.get('decision','APPROVE')} "
-                "reward=0.0 done=false error=null"
-            )
-
-            if observation is not None:
+            for step_index in range(1, 3):
+                action = get_action(current_observation)
                 step_data = post_with_retry(client, "/step", json=action)
-                if step_data is not None:
-                    reward = safe_get(step_data, "reward", 0.0)
-                    total_reward += reward
 
-        log(f"[END] task={task_name} score={round(total_reward,4)} steps=1")
+                if step_data is None:
+                    break
+
+                reward = safe_get(step_data, "reward", 0.0)
+                done = bool(safe_get(step_data, "done", False))
+                total_reward += reward
+                steps = step_index
+
+                log(
+                    f"[STEP] step={step_index} action={action.get('decision','APPROVE')} "
+                    f"reward={round(reward,4)} done={'true' if done else 'false'} error=null"
+                )
+
+                current_observation = safe_get(step_data, "observation", current_observation)
+
+                if done:
+                    break
+
+        log(f"[END] task={task_name} score={round(total_reward,4)} steps={steps}")
 
     except Exception:
         log(f"[STEP] step=1 action=APPROVE reward=0.0 done=false error=null")
-        log(f"[END] task={task_name} score=0.0 steps=1")
+        log(f"[END] task={task_name} score=0.0 steps={steps}")
 
 
 # ==============================

@@ -42,6 +42,15 @@ async def health_check():
     }
 
 
+@app.get("/health")
+async def health():
+    """Minimal health endpoint for platform readiness checks."""
+    return {
+        "status": "healthy",
+        "service": "pharma-env"
+    }
+
+
 @app.post("/reset", response_model=PharmacistObservation)
 async def reset():
     """
