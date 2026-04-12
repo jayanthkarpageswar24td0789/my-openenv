@@ -17,6 +17,10 @@ from models import (
 )
 
 
+def clamp_score(score: float) -> float:
+    return max(0.01, min(score, 0.99))
+
+
 class PharmaSimEnvironment:
     """
     OpenEnv environment for training AI pharmacist agents
@@ -134,6 +138,7 @@ class PharmaSimEnvironment:
 
     def _build_observation(self, done: bool, message: str, reward: float) -> PharmacistObservation:
         """Create an observation for the current case with derived risk metadata."""
+        reward = clamp_score(reward)
         return PharmacistObservation(
             patient=PatientCase(**self.current_case["patient"]),
             proposed_formula=DrugFormula(**self.current_case["formula"]),
@@ -180,7 +185,7 @@ class PharmaSimEnvironment:
             f"Task {task_id}: {task_name}\n\n"
             "Analyze this patient case and validate the proposed formula for safety and efficacy."
         )
-        return self._build_observation(done=False, message=message, reward=0.0)
+        return self._build_observation(done=False, message=message, reward=0.01)
     
     def step(self, action: PharmacistAction) -> Tuple[PharmacistObservation, float, bool]:
         """
@@ -198,7 +203,7 @@ class PharmaSimEnvironment:
         self.state.episode_step += 1
 
         if self.state.episode_step == 1:
-            reward = 0.3
+            reward = clamp_score(0.3)
             self.state.score = reward
             message = (
                 "Step 1 complete: partial evaluation recorded. "
@@ -207,7 +212,7 @@ class PharmaSimEnvironment:
             observation = self._build_observation(done=False, message=message, reward=reward)
             return observation, reward, False
 
-        reward = self.evaluate_action(action)
+        reward = clamp_score(self.evaluate_action(action))
         self.state.score = reward
 
         result_message = self._build_result_message(action, reward)
@@ -236,9 +241,7 @@ class PharmaSimEnvironment:
         if "bleeding" in reasoning or "interaction" in reasoning:
             score += 0.2
 
-        # Ensure score strictly between (0, 1)
-        score = max(0.01, min(score, 0.99))
-        return score
+        return clamp_score(score)
 
     def _grade_action(self, action: PharmacistAction) -> float:
         """Backward-compatible wrapper for older callers."""
