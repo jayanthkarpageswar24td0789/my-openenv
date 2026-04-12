@@ -18,7 +18,16 @@ from models import (
 
 
 def clamp_score(score: float) -> float:
-    return max(0.01, min(score, 0.99))
+    try:
+        score = float(score)
+    except:
+        return 0.5  # safe fallback
+
+    if score <= 0.0:
+        return 0.01
+    if score >= 1.0:
+        return 0.99
+    return score
 
 
 class PharmaSimEnvironment:
@@ -203,7 +212,8 @@ class PharmaSimEnvironment:
         self.state.episode_step += 1
 
         if self.state.episode_step == 1:
-            reward = clamp_score(0.3)
+            reward = 0.3
+            reward = clamp_score(reward)
             self.state.score = reward
             message = (
                 "Step 1 complete: partial evaluation recorded. "
@@ -212,7 +222,8 @@ class PharmaSimEnvironment:
             observation = self._build_observation(done=False, message=message, reward=reward)
             return observation, reward, False
 
-        reward = clamp_score(self.evaluate_action(action))
+        reward = self.evaluate_action(action)
+        reward = clamp_score(reward)
         self.state.score = reward
 
         result_message = self._build_result_message(action, reward)
