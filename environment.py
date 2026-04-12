@@ -236,7 +236,9 @@ class PharmaSimEnvironment:
         if "bleeding" in reasoning or "interaction" in reasoning:
             score += 0.2
 
-        return max(0.0, min(score, 1.0))
+        # Ensure score strictly between (0, 1)
+        score = max(0.01, min(score, 0.99))
+        return score
 
     def _grade_action(self, action: PharmacistAction) -> float:
         """Backward-compatible wrapper for older callers."""
